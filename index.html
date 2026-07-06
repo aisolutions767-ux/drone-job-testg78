@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>San Francisco Ferry Building - Fixed Drone Shot</title>
+    <!-- Include CesiumJS Assets -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.124/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.124/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <style>
+        /* Expand the viewer to fill the entire screen */
+        html, body, #cesiumContainer {
+            width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden;
+            background-color: #000;
+        }
+        /* Hide all default Cesium UI controls for a clean canvas */
+        .cesium-viewer-bottom, .cesium-viewer-toolbar, .cesium-navigationHelpButton {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // --- 1. SET YOUR API KEYS HERE ---
+        Cesium.Ion.defaultAccessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4MDNiNDQ4Yi1hMzg0LTQxYzEtYjMxYy00NGJlMjBiN2I4YzYiLCJpZCI6NDA2NzI3LCJpYXQiOjE3NzQwNTEzMzd9.W410ifK9UItmiq6mZIr0ot8JXGgi4T9mCBc9GIUaykA;
+        const GOOGLE_MAPS_API_KEY = AIzaSyDYl1swLA4lLPOhJQzzLSmjwNfgDzoisMQ;
+
+        // --- 2. THE AI AGENT'S OUTPUT PARAMETERS ---
+        const lat = 37.7955;
+        const lng = -122.3937;
+        const orbitRadiusMeters = 580;
+        const cameraAltitudeMeters = 105;
+        const cameraPitchDegrees = -10.5;
+        
+        // --- 3. INITIALIZE THE CLEAN VIEWER ---
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: null, 
+            globe: false, 
+            animation: false,
+            timeline: false,
+            geocoder: false,
+            homeButton: false,
+            infoBox: false,
+            sceneModePicker: false,
+            selectionIndicator: false,
+            navigationHelpButton: false,
+            baseLayerPicker: false,
+            skyAtmosphere: true 
+        });
+
+        // --- 4. LOAD THE 3D TILES & CAMERA ---
+        async function loadScene() {
+            try {
+                // Fetch the high-res Google Photorealistic 3D Tiles
+                const tileset = await Cesium.Cesium3DTileset.fromUrl(
+                    `https://tile.googleapis.com/v1/3dtiles/datasets/google_aerial_shapes/tileset?key=${GOOGLE_MAPS_API_KEY}`
+                );
+                viewer.scene.primitives.add(tileset);
+
+                // Offset the look-target slightly downwards so the camera locks onto the building's physical center mass
+                const targetCenter = Cesium.Cartesian3.fromDegrees(
+                    lng, 
+                    lat, 
+                    cameraAltitudeMeters - (cameraAltitudeMeters * 0.2)
+                );
+
+                // Fix the drone angle statically (45 degrees = facing North-East)
+                const staticHeadingRad = Cesium.Math.toRadians(45); 
+                const pitchRad = Cesium.Math.toRadians(cameraPitchDegrees);
+
+                // Lock camera orientation and distance based on AI variables
+                viewer.camera.lookAt(
+                    targetCenter, 
+                    new Cesium.HeadingPitchRange(staticHeadingRad, pitchRad, orbitRadiusMeters)
+                );
+
+            } catch (error) {
+                console.error("Error loading 3D Tileset:", error);
+            }
+        }
+
+        loadScene();
+    </script>
+</body>
+</html>
+
